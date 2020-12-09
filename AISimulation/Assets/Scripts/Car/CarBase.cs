@@ -12,67 +12,50 @@ public class CarBase : MovableObject
     private float SteeringAngle;
     private float Motor;
 
-    public float TargetSpeed;
-    private bool isBraking;
 
-    private RayTraceResult FrontRayResult=new RayTraceResult();
-    [SerializeField]
-    private Transform frontTracePosition;
+    private bool isBraking;
+    private float BrakeForce;
+
+    public Transform frontTracePosition;
 
     public void SetMotor(float percent)
     {
+        isBraking = false;
         if (percent > 0)
         {
-            Motor=MaxMotor*percent;
+            Motor = MaxMotor * percent;
         }
         else
         {
-            Motor = MaxBrake * percent;
+            Motor = MaxMotor * percent;
         }
+    }
+    public void Brake(float percent)
+    {
+        BrakeForce = percent * MaxBrake;
+        isBraking = true;
     }
     public void SetSteering(float steering)
     {
         SteeringAngle = Mathf.Clamp(steering, -1, 1);
     }
 
-    public void SetTargetSpeed(float targetSpeed)
-    {
-        TargetSpeed = targetSpeed;        
-    }
-
     void FixedUpdate()
     {
-        FrontRayTrace();
         //float h = -Input.GetAxis("Horizontal");
         //float v = Input.GetAxis("Vertical");
-        Vector3 currentVelocity = rb.velocity;
-        float currentSpeed = currentVelocity.magnitude;
-        if (currentSpeed < TargetSpeed )
+      
+
+        Vector2 speed = transform.up * Motor;
+
+        if (isBraking)
         {
-            if (FrontRayResult.isHit)
-            {
-                SetMotor(-1);
-                isBraking = true;
-            }
-            else
-            {
-                SetMotor(1);
-                isBraking = false;
-            }           
+            rb.drag = BrakeForce;
         }
         else
         {
-            SetMotor(-1);
-            isBraking = true;
-        }
-
-
-
-        Vector2 speed = transform.up * Motor;
-        rb.AddForce(speed);
-        if(isBraking && Vector3.Dot( rb.velocity,transform.up)<0)
-        {
-            rb.velocity = Vector2.zero;
+            rb.drag = 0;
+            rb.AddForce(speed);
         }
 
         float direction = Vector2.Dot(rb.velocity, rb.GetRelativeVector(Vector2.up));
@@ -110,23 +93,5 @@ public class CarBase : MovableObject
 
         rb.AddForce(rb.GetRelativeVector(relativeForce));
     }
-    private void FrontRayTrace()
-    {
-        RaycastHit2D hit = Physics2D.Raycast(frontTracePosition.position, transform.up, 5f);
-        FrontRayResult.isHit = hit;
-        if (hit)
-        {
-            FrontRayResult.hitObject = hit.transform.gameObject;
-            FrontRayResult.distance = hit.distance;
-            FrontRayResult.angle = 0;
-        }
-  
-    }
-    public class RayTraceResult
-    {
-        public bool isHit;
-        public GameObject hitObject;
-        public float distance;
-        public float angle;
-    }
+
 }
